@@ -1,0 +1,94 @@
+﻿@model SearchViewModel
+@{
+    ViewData["Title"] = "Search";
+}
+
+<h1>Search</h1>
+
+
+<div class="container">
+    @if (Model.Error != null)
+    {
+        <h1 class="text-danger">@Model.Error</h1>
+    }
+    else if (!string.IsNullOrWhiteSpace(@Model.Title))
+    {
+        <p>Search results by title : @Model.Title  (@Model.TotalResults)</p>
+
+        <div class="row">
+            @foreach (Cinema item in @Model.Movies)
+            {
+                <div class="col-3">
+                    <partial name="_MovieCardPartial" model="@item"></partial>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p>Not results</p>
+    }
+</div>
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Farid{
+    <script>
+        let currentPage = @Model.CurrentPage;
+        let totalPages = @Model.TotalPages;
+        let title = '@Model.Title';
+
+        $(window).scroll(function () {
+            if ($(window).scrollTop() == $(document).height() - $(window).height()) {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    loadMoreMovies(currentPage, title);
+                }
+            }
+        });
+
+        async function loadMoreMovies(page, title) {
+            let url = `@Url.Action("Search", "Home")?page=${page}&title=${title}&apikey=5b9b7798`;
+            let data = { page: page, title: title };
+
+            let response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            let result = await response.text();
+            let movies = $(result).find('.col-3');
+            $('.row').append(movies);
+        }
+
+        $('[data-open-modal]').click(async function () {
+            event.preventDefault();
+
+            let url = $(this).attr('href');
+            let response = await fetch(url);
+            let result = await response.text();
+            $('.modal-body').html(result);
+
+            $('#exampleModal').modal('show');
+        });
+    </script>
+}
